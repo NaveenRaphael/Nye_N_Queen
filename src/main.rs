@@ -28,7 +28,7 @@ impl QueenBoard {
             return false;
         }
 
-        self.modifyBoard(r, c, 1);
+        self.modify_board(r, c, 1);
         true
     }
 
@@ -37,10 +37,10 @@ impl QueenBoard {
             return;
         }
 
-        self.modifyBoard(r, c, -1);
+        self.modify_board(r, c, -1);
     }
 
-    fn modifyBoard(&mut self, r: usize, c: usize, inc: i32) {
+    fn modify_board(&mut self, r: usize, c: usize, inc: i32) {
         self.board[r][c] += -inc;
 
         let mut k = 1;
