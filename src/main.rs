@@ -1,51 +1,71 @@
 use std::ops::{AddAssign, Index, IndexMut};
 
+use num_traits::{NumAssign, Unsigned};
+
+trait MyNum: NumAssign + Unsigned + Clone {}
+
 #[derive(Clone, Copy)]
-enum CellState {
+enum CellState<T: MyNum> {
     Queen,
-    QueenSeen(u8),
+    QueenSeen(T),
 }
 
-impl CellState {
+impl<T> CellState<T>
+where
+    T: MyNum,
+{
     fn queen_candidate(&self) -> bool {
-        matches!(self, CellState::QueenSeen(0))
+        match self {
+            CellState::QueenSeen(i) if i.is_zero() => true,
+            _ => false,
+        }
+        // matches!(self, CellState::QueenSeen())
     }
 }
-impl Default for CellState {
+impl<T> Default for CellState<T>
+where
+    T: MyNum,
+{
     fn default() -> Self {
-        CellState::QueenSeen(0)
+        CellState::QueenSeen(T::zero())
     }
 }
-impl AddAssign<i8> for CellState {
-    fn add_assign(&mut self, rhs: i8) {
-        match (self, rhs > 0) {
+impl<T> AddAssign<bool> for CellState<T>
+where
+    T: MyNum,
+{
+    fn add_assign(&mut self, rhs: bool) {
+        match (self, rhs) {
             (CellState::Queen, _) => unreachable!(),
-            (CellState::QueenSeen(i), true) => *i += rhs as u8,
-            (CellState::QueenSeen(i), false) => *i -= (-rhs) as u8,
+            (CellState::QueenSeen(i), true) => *i += T::one(),
+            (CellState::QueenSeen(i), false) => *i -= T::one(),
         }
     }
 }
 
-struct QueenBoard {
+struct QueenBoard<T>
+where
+    T: MyNum,
+{
     len: u8,
-    board: Vec<Vec<CellState>>,
+    board: Vec<Vec<CellState<T>>>,
 }
 
-impl Index<(u8, u8)> for QueenBoard {
-    type Output = CellState;
+impl<T: MyNum> Index<(u8, u8)> for QueenBoard<T> {
+    type Output = CellState<T>;
 
     fn index(&self, index: (u8, u8)) -> &Self::Output {
         &self.board[index.0 as usize][index.1 as usize]
     }
 }
 
-impl IndexMut<(u8, u8)> for QueenBoard {
+impl<T: MyNum> IndexMut<(u8, u8)> for QueenBoard<T> {
     fn index_mut(&mut self, index: (u8, u8)) -> &mut Self::Output {
         &mut self.board[index.0 as usize][index.1 as usize]
     }
 }
 
-impl QueenBoard {
+impl<T: MyNum> QueenBoard<T> {
     fn new(size: u8) -> Self {
         // Initialize the board with 0s
         QueenBoard {
@@ -56,7 +76,7 @@ impl QueenBoard {
 
     fn print_board(&self) {
         for row in &self.board {
-            for &cell in row {
+            for cell in row {
                 match cell {
                     CellState::Queen => print!("Q "),
                     CellState::QueenSeen(_) => print!("_ "),
@@ -79,8 +99,7 @@ impl QueenBoard {
         self.modify_board_other_cells(r, c, false);
     }
 
-    fn modify_board_other_cells(&mut self, r: u8, c: u8, to_increase: bool) {
-        let inc = if to_increase { 1 } else { -1 };
+    fn modify_board_other_cells(&mut self, r: u8, c: u8, inc: bool) {
         for k in 1..8 {
             if r + k < self.len {
                 self[(r + k, c)] += inc;
@@ -127,8 +146,10 @@ impl QueenBoard {
     }
 }
 
+impl MyNum for u8 {}
+
 fn main() {
-    let mut board = QueenBoard::new(8); // Create an 8x8 board
+    let mut board: QueenBoard<u8> = QueenBoard::new(8); // Create an 8x8 board
 
     board.add_queen(0, 0); // Add a queen to (0, 0)
     board.add_queen(1, 2); // Add a queen to (1, 2)
